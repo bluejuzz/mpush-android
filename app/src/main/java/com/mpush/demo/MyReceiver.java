@@ -6,10 +6,11 @@ import android.content.Intent;
 import android.text.TextUtils;
 import android.widget.Toast;
 
+import com.aismono.mpush.api.Constants;
+import com.google.gson.Gson;
 import com.mpush.android.MPush;
 import com.mpush.android.MPushService;
 import com.mpush.android.Notifications;
-import com.mpush.api.Constants;
 
 import org.json.JSONObject;
 
@@ -21,22 +22,38 @@ public class MyReceiver extends BroadcastReceiver {
             byte[] bytes = intent.getByteArrayExtra(MPushService.EXTRA_PUSH_MESSAGE);
             int messageId = intent.getIntExtra(MPushService.EXTRA_PUSH_MESSAGE_ID, 0);
             String message = new String(bytes, Constants.UTF_8);
+            Packet packet = new Gson().fromJson(message, Packet.class);
+            Toast.makeText(context, "收到新的通知：" + packet.toString(), Toast.LENGTH_SHORT).show();
+            try {
+                messageId = Integer.parseInt(packet.getBody().getMsglocalId());
+            } catch (NumberFormatException e) {
+                e.printStackTrace();
+            }
+            if (messageId > 0) {
+                MPush.I.ack(messageId);
+            }
 
-            Toast.makeText(context, "收到新的通知：" + message, Toast.LENGTH_SHORT).show();
-
-            if (messageId > 0) MPush.I.ack(messageId);
-
-            if (TextUtils.isEmpty(message)) return;
+            if (TextUtils.isEmpty(message)) {
+                return;
+            }
 
             NotificationDO ndo = fromJson(message);
 
             if (ndo != null) {
                 Intent it = new Intent(context, MyReceiver.class);
                 it.setAction(MPushService.ACTION_NOTIFICATION_OPENED);
-                if (ndo.getExtras() != null) it.putExtra("my_extra", ndo.getExtras().toString());
-                if (TextUtils.isEmpty(ndo.getTitle())) ndo.setTitle("MPush");
-                if (TextUtils.isEmpty(ndo.getTicker())) ndo.setTicker(ndo.getTitle());
-                if (TextUtils.isEmpty(ndo.getContent())) ndo.setContent(ndo.getTitle());
+                if (ndo.getExtras() != null) {
+                    it.putExtra("my_extra", ndo.getExtras().toString());
+                }
+                if (TextUtils.isEmpty(ndo.getTitle())) {
+                    ndo.setTitle("MPush");
+                }
+                if (TextUtils.isEmpty(ndo.getTicker())) {
+                    ndo.setTicker(ndo.getTitle());
+                }
+                if (TextUtils.isEmpty(ndo.getContent())) {
+                    ndo.setContent(ndo.getTitle());
+                }
                 Notifications.I.notify(ndo, it);
             }
         } else if (MPushService.ACTION_NOTIFICATION_OPENED.equals(intent.getAction())) {

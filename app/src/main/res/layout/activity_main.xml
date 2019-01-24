@@ -30,7 +30,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:hint="alloc服务接口地址ip:port"
-            android:text="http://103.246.161.44:9999" />
+            android:text="http://192.168.50.224:9999" />
 
     </LinearLayout>
 
@@ -49,7 +49,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:hint="要绑定的用户ID"
-            android:text="user-0" />
+            android:text="100200" />
 
         <Button
             android:layout_width="wrap_content"
@@ -80,7 +80,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:hint="要绑定的用户ID"
-            android:text="user-0" />
+            android:text="100000" />
 
     </LinearLayout>
 

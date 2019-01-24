@@ -30,7 +30,8 @@ import android.net.NetworkInfo;
 import android.net.NetworkInfo.State;
 import android.os.SystemClock;
 
-import com.mpush.api.Constants;
+
+import com.aismono.mpush.api.Constants;
 
 import static android.net.ConnectivityManager.CONNECTIVITY_ACTION;
 

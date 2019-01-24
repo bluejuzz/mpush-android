@@ -29,8 +29,9 @@ import android.content.Intent;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
 
-import com.mpush.api.Client;
-import com.mpush.api.ClientListener;
+import com.aismono.mpush.api.Client;
+import com.aismono.mpush.api.ClientListener;
+
 
 /**
  * Created by yxx on 2016/2/13.

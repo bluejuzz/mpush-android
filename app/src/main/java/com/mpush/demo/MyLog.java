@@ -3,9 +3,10 @@ package com.mpush.demo;
 import android.app.Activity;
 import android.widget.EditText;
 
+import com.aismono.mpush.api.Constants;
+import com.aismono.mpush.api.Logger;
 import com.mpush.android.MPushLog;
-import com.mpush.api.Constants;
-import com.mpush.api.Logger;
+
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;

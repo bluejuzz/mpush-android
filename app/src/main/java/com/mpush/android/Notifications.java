@@ -26,7 +26,8 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.support.v7.app.NotificationCompat;
+import android.support.v4.app.NotificationCompat;
+
 
 import java.util.HashMap;
 import java.util.Map;
@@ -70,7 +71,9 @@ public final class Notifications {
     }
 
     public int notify(MPushMessage message, Intent clickIT) {
-        if (message == null || clickIT == null) return -1;
+        if (message == null || clickIT == null) {
+            return -1;
+        }
         Integer nid = message.getNid();
         //1.如果NID不存在则新生成一个，且新生成的Id在nIds是不存在的
         if (nid == null || nid <= 0) {
@@ -100,12 +103,16 @@ public final class Notifications {
 
     public void clean(Integer nId) {
         Integer count = nIds.remove(nId);
-        if (count != null) nm.cancel(nId);
+        if (count != null) {
+            nm.cancel(nId);
+        }
     }
 
     public void clean(Intent intent) {
         int nId = intent.getIntExtra(Notifications.EXTRA_MESSAGE_ID, 0);
-        if (nId > 0) clean(nId);
+        if (nId > 0) {
+            clean(nId);
+        }
     }
 
     public void cleanAll() {

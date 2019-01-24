@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.BitmapFactory;
-import android.os.Looper;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.telephony.TelephonyManager;
@@ -13,26 +12,24 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import com.aismono.mpush.api.Constants;
+import com.aismono.mpush.api.push.PushContext;
+import com.aismono.mpush.client.ClientConfig;
+import com.google.gson.Gson;
 import com.mpush.android.BuildConfig;
 import com.mpush.android.MPush;
-import com.mpush.android.MPushLog;
+import com.mpush.android.MPushConstant;
 import com.mpush.android.Notifications;
 import com.mpush.android.R;
-import com.mpush.api.Constants;
-import com.mpush.api.http.HttpCallback;
-import com.mpush.api.http.HttpMethod;
-import com.mpush.api.http.HttpRequest;
-import com.mpush.api.http.HttpResponse;
-import com.mpush.client.ClientConfig;
 
-import org.json.JSONException;
-import org.json.JSONObject;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Handler;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -49,6 +46,26 @@ public class MainActivity extends AppCompatActivity {
             EditText et = (EditText) findViewById(R.id.alloc);
             et.setText(alloc);
         }
+        final ExecutorService executorService = Executors.newFixedThreadPool(3);
+        executorService.submit(new Runnable() {
+            @Override
+            public void run() {
+                User userById = AppDatabase.getInstance().userDao().getUserById("10000");
+                List<User> all = AppDatabase.getInstance().userDao().getAll();
+                if (all == null || all.size() == 0) {
+                    ArrayList<User> list = new ArrayList<>();
+                    for (int i = 0; i < 10; i++) {
+                        list.add(new User(String.format(Locale.CHINA, "pipixia_%d", i), String.format(Locale.CHINA, "10%d", i), String.format(Locale.CHINA, "1000%d", i)));
+                    }
+                    User[] users = new User[list.size()];
+                    list.toArray(users);
+                    AppDatabase.getInstance().userDao().insertAll(users);
+                    executorService.shutdownNow();
+                }
+                AppDatabase.getInstance().userDao().insertUsersAndFriends(userById, all);
+            }
+        });
+
     }
 
     private void initPush(String allocServer, String userId) {
@@ -58,11 +75,11 @@ public class MainActivity extends AppCompatActivity {
         ClientConfig cc = ClientConfig.build()
                 .setPublicKey(publicKey)
                 .setAllotServer(allocServer)
-                .setDeviceId(getDeviceId())
+                .setDeviceId(userId)
                 .setClientVersion(BuildConfig.VERSION_NAME)
                 .setLogger(new MyLog(this, (EditText) findViewById(R.id.log)))
                 .setLogEnabled(BuildConfig.DEBUG)
-                .setEnableHttpProxy(true)
+                .setEnableHttpProxy(false)
                 .setUserId(userId);
         MPush.I.checkInit(getApplicationContext()).setClientConfig(cc);
     }
@@ -132,36 +149,7 @@ public class MainActivity extends AppCompatActivity {
 
         if (TextUtils.isEmpty(hello)) hello = "hello";
 
-        JSONObject params = new JSONObject();
-        params.put("userId", to);
-        params.put("hello", from + " say:" + hello);
-
-        final Context context = this.getApplicationContext();
-        HttpRequest request = new HttpRequest(HttpMethod.POST, allocServer + "/push");
-        byte[] body = params.toString().getBytes(Constants.UTF_8);
-        request.setBody(body, "application/json; charset=utf-8");
-        request.setTimeout((int) TimeUnit.SECONDS.toMillis(10));
-        request.setCallback(new HttpCallback() {
-            @Override
-            public void onResponse(final HttpResponse httpResponse) {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        if (httpResponse.statusCode == 200) {
-                            Toast.makeText(context, new String(httpResponse.body, Constants.UTF_8), Toast.LENGTH_SHORT).show();
-                        } else {
-                            Toast.makeText(context, httpResponse.reasonPhrase, Toast.LENGTH_SHORT).show();
-                        }
-                    }
-                });
-            }
-
-            @Override
-            public void onCancelled() {
-
-            }
-        });
-        MPush.I.sendHttpProxy(request);
+        MPush.I.sendMessage(from, to, "com.dosmono.mpush.plugins.im.chat.ImChatGroupHandler", 1, new TextMessageEntity("What's your name"));
     }
 
     public void stopPush(View btn) {

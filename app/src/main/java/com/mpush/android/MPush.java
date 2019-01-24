@@ -26,14 +26,21 @@ import android.content.SharedPreferences;
 import android.os.Build;
 import android.support.annotation.Nullable;
 
-import com.mpush.api.Client;
-import com.mpush.api.ClientListener;
-import com.mpush.api.Constants;
-import com.mpush.api.http.HttpRequest;
-import com.mpush.api.http.HttpResponse;
-import com.mpush.api.push.PushContext;
-import com.mpush.client.ClientConfig;
-import com.mpush.util.DefaultLogger;
+
+import com.aismono.mpush.api.Client;
+import com.aismono.mpush.api.ClientListener;
+import com.aismono.mpush.api.Constants;
+import com.aismono.mpush.api.ack.AckCallback;
+import com.aismono.mpush.api.ack.AckModel;
+import com.aismono.mpush.api.http.HttpRequest;
+import com.aismono.mpush.api.http.HttpResponse;
+import com.aismono.mpush.api.push.PushContext;
+import com.aismono.mpush.client.ClientConfig;
+import com.aismono.mpush.util.DefaultLogger;
+import com.google.gson.Gson;
+import com.mpush.demo.BaseMessageEntity;
+import com.mpush.demo.Packet;
+import com.mpush.demo.TextMessageEntity;
 
 import java.util.concurrent.Future;
 
@@ -58,14 +65,14 @@ public final class MPush {
     private Context ctx;
     private ClientConfig clientConfig;
     private SharedPreferences sp;
-    /*package*/ Client client;
+    Client client;
 
     /**
      * 获取MPUSH实例
      *
      * @return
      */
-    static /*package*/ MPush I() {
+    static MPush I() {
         if (I == null) {
             synchronized (MPush.class) {
                 if (I == null) {
@@ -257,6 +264,20 @@ public final class MPush {
         return null;
     }
 
+    public <T extends BaseMessageEntity> void sendMessage(String fromId, String toId, String query, int msgType, T entity) {
+        Packet packet = new Packet();
+        packet.setTo("");
+        packet.setFrom("");
+        packet.setMsgName(MPushConstant.PUSH_TYPE_IQ);
+        packet.setVer("1.0.0");
+        packet.setQuery(query);
+        Packet.MessageBody messageBody = new Packet.MessageBody(fromId, toId, msgType, entity);
+        packet.setBody(messageBody);
+        String toJson = new Gson().toJson(packet);
+        byte[] body = toJson.getBytes(Constants.UTF_8);
+        sendPush(PushContext.build(body));
+    }
+
     /**
      * 发送Push到服务端, 不需要ACK
      *
@@ -264,10 +285,7 @@ public final class MPush {
      * @return
      */
     public Future<Boolean> sendPush(byte[] content) {
-        if (hasStarted() && client.isRunning()) {
-            return client.push(PushContext.build(content));
-        }
-        return null;
+        return sendPush(PushContext.build(content));
     }
 
     /**
@@ -290,7 +308,7 @@ public final class MPush {
     }
 
     @Nullable
-    private ClientConfig getClientConfig() {
+    public ClientConfig getClientConfig() {
         if (clientConfig == null) {
             String clientVersion = sp.getString(SP_KEY_CV, null);
             String deviceId = sp.getString(SP_KEY_DI, null);
